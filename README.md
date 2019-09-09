@@ -1,1 +1,1 @@
-https://gzh-ms.github.io/qixianimation/index.html
+https://gzh-ms.github.io/qixianimation/dist/
