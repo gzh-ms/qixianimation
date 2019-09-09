@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <style>
+    .boy {
+      position: absolute;
+      left: 0;
+      top: 120px;
+      width: 151px;
+      height: 291px; 
+      background: url('./images/boy.png') 0 -291px no-repeat;
+    }
+  
+  </style>
+</head>
+<body>
+  <div id="boy" class="boy"></div>
+  <div id="stop">stop</div>
+  <div id="start">start</div>
+
+</body>
+<script>
+  /* 
+    * Promise + async +setTimeout 实现的动画 
+    * 雪碧图。根据background-position切换显示的图片
+    * 
+  */
+ let timer = null;
+  // 切换背景图片
+  // function move(elem, x) {
+  //   return new Promise(resolve => {
+  //     elem.style.backgroundPosition = x;
+  //     // css({'background-position': x});
+  //     timer = setTimeout(resolve, 200);
+  //   });
+  // }
+
+  // 动画
+  // async function animation(elem) {
+  //   const queue = ['-602px -0px', '-302px -291px', '-151px -291px', '-0px -291px'];
+  //   let _queue = [...queue];
+  //   while(_queue.length) {
+  //     const x = _queue.shift();
+  //     if (_queue.length === 0) _queue = [...queue];
+  //     await move(elem, x);
+  //   }
+  // }
+
+  
+  // 动画
+  
+  // 动作
+  const animate = (elem, queue) => {
+    // 动作参数
+    let _queue = [...queue]; 
+    // 动作速度
+    let count = 10;
+    // 停止动作
+    let animID = null;
+    function _animate() {
+      count++;
+      if (count > 10) {
+        count = 0;
+        const x = _queue.shift();
+        if (_queue.length === 0) _queue = [...queue];
+        // 动作实现
+        elem.style.backgroundPosition = x;
+      }    
+      animID = requestAnimationFrame(_animate);
+    };
+    // 初始化状态，运动
+    // animID = requestAnimationFrame(_animate);
+    return  {
+      // 开始动画
+      startAnim() {
+        count = 10;
+        animID === null && requestAnimationFrame(_animate);
+      },
+      // 取消动画
+      cancelAnim() {
+        cancelAnimationFrame(animID);
+        animID = null;
+      }
+    }
+  }
+
+  function BoyWalk() {
+    const boy = document.getElementById('boy'); 
+    // 男孩走路动作
+    const queue = ['-602px -0px', '-302px -291px', '-151px -291px', '-0px -291px'];
+    const { startAnim, cancelAnim } = animate(boy, queue);
+
+    // 恢复走路动作
+    const restoreWalk = () => {
+      startAnim();
+    };
+
+    // 停止走路动作、位移
+    const pauseWalk = () => {
+      move.cancel();
+      cancelAnim();
+    };
+
+    // 开始走路
+    const walk = (time, distX) => {
+      restoreWalk();
+      return move.moveTo(boy, time, distX);
+    }
+
+    return {
+      // 开始走路
+      walkTo(time, distX) {
+        return walk(time, distX);
+      },
+      restoreWalk,
+      pauseWalk
+    }
+  }
+
+  function wait() {
+    return new Promise(resolve => setTimeout(resolve, 1000));
+  }
+
+  const move = Move();
+
+  // 位移动画
+  function Move() {
+    // 移动距离
+    let _distX = 0;
+    // 动画开关
+    let animID = null;
+    // 取消动画
+    const cancel = () => {
+      cancelAnimationFrame(animID);
+      animID = null;
+    };
+    // 移动到。elem位移对象--dom，disX位移地点--0-1小数，time时间--毫秒
+    const moveTo = (elem, time = 5000, distX) => {
+      // 每16.7毫秒移动距离
+      const ratio = distX * (1000 / 60) / time;
+      // 移动到目的后决议为成功，下一步操作在then方法中定义
+      return new Promise(resolve => {
+        function _move() {
+          _distX = _distX + ratio;
+          elem.style.left = _distX * 100 + '%';
+          animID = requestAnimationFrame(_move);
+          if (_distX >= distX) {
+            cancel();
+            resolve();
+          }
+        }
+        animID = requestAnimationFrame(_move);
+      });
+    };
+    
+    return { moveTo, cancel };
+  }
+
+  const boyWalk = BoyWalk();
+
+  document.getElementById('stop').onclick = function() {
+    boyWalk.pauseWalk();
+  }
+  document.getElementById('start').onclick = () => {
+    (async () => {
+      await boyWalk.walkTo(2000, 0.2);
+      await boyWalk.pauseWalk();
+      await wait();
+      await boyWalk.walkTo(10000, 0.7);
+    })();
+  }
+</script>
+</html>
